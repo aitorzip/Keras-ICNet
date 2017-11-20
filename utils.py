@@ -19,7 +19,7 @@ import tensorflow as tf
         
 class MapillaryGenerator(Sequence):
     def __init__(self, folder='datasets/mapillary', mode='training', n_classes=66, batch_size=1, resize_shape=None, 
-                 crop_shape=(640, 320), horizontal_flip=True, vertical_flip=False, brightness=0.1, rotation=5, zoom=0.1):
+                 crop_shape=(640, 320), horizontal_flip=False, vertical_flip=False, brightness=None, rotation=None, zoom=None):
 
         self.image_path_list = sorted(glob.glob(os.path.join(folder, mode, 'images/*')))
         self.label_path_list = sorted(glob.glob(os.path.join(folder, mode, 'instances/*')))
@@ -37,14 +37,14 @@ class MapillaryGenerator(Sequence):
         # Preallocate memory
         if mode == 'training' and self.crop_shape:
             self.X = np.zeros((batch_size, crop_shape[1], crop_shape[0], 3), dtype='float32')
-            self.Y1 = np.zeros((batch_size, crop_shape[1]/4, crop_shape[0]/4, self.n_classes), dtype='float32')
-            self.Y2 = np.zeros((batch_size, crop_shape[1]/8, crop_shape[0]/8, self.n_classes), dtype='float32')
-            self.Y3 = np.zeros((batch_size, crop_shape[1]/16, crop_shape[0]/16, self.n_classes), dtype='float32')
+            self.Y1 = np.zeros((batch_size, crop_shape[1]//4, crop_shape[0]//4, self.n_classes), dtype='float32')
+            self.Y2 = np.zeros((batch_size, crop_shape[1]//8, crop_shape[0]//8, self.n_classes), dtype='float32')
+            self.Y3 = np.zeros((batch_size, crop_shape[1]//16, crop_shape[0]//16, self.n_classes), dtype='float32')
         elif self.resize_shape:
             self.X = np.zeros((batch_size, resize_shape[1], resize_shape[0], 3), dtype='float32')
-            self.Y1 = np.zeros((batch_size, resize_shape[1]/4, resize_shape[0]/4, self.n_classes), dtype='float32')
-            self.Y2 = np.zeros((batch_size, resize_shape[1]/8, resize_shape[0]/8, self.n_classes), dtype='float32')
-            self.Y3 = np.zeros((batch_size, resize_shape[1]/16, resize_shape[0]/16, self.n_classes), dtype='float32')
+            self.Y1 = np.zeros((batch_size, resize_shape[1]//4, resize_shape[0]//4, self.n_classes), dtype='float32')
+            self.Y2 = np.zeros((batch_size, resize_shape[1]//8, resize_shape[0]//8, self.n_classes), dtype='float32')
+            self.Y3 = np.zeros((batch_size, resize_shape[1]//16, resize_shape[0]//16, self.n_classes), dtype='float32')
         else:
             raise Exception('No image dimensions specified!')
         
@@ -59,8 +59,7 @@ class MapillaryGenerator(Sequence):
             images = [cv2.imread(image_path, 1) for image_path in self.image_path_list[i*self.batch_size:(i+1)*self.batch_size]]
             labels = [cv2.imread(label_path, 0) for label_path in self.label_path_list[i*self.batch_size:(i+1)*self.batch_size]]
         
-        n = 0
-        for image, label in zip(images, labels):
+        for n, (image, label) in enumerate(zip(images, labels)):
             # Do augmentation (only if training)
             if self.mode == 'training':
                 if self.horizontal_flip and random.randint(0,1):
@@ -83,17 +82,16 @@ class MapillaryGenerator(Sequence):
                 else:
                     scale = 1.0
                 if self.rotation or self.zoom:
-                    M = cv2.getRotationMatrix2D((image.shape[1]/2, image.shape[0]/2), angle, scale)
+                    M = cv2.getRotationMatrix2D((image.shape[1]//2, image.shape[0]//2), angle, scale)
                     image = cv2.warpAffine(image, M, image.shape[:2])
                     label = cv2.warpAffine(label, M, label.shape[:2])
                 if self.crop_shape:
                     image, label = _random_crop(image, label, self.crop_shape)
 
             self.X[n] = image
-            self.Y1[n] = to_categorical(cv2.resize(label, (label.shape[1]/4, label.shape[0]/4)), self.n_classes).reshape((label.shape[0]/4, label.shape[1]/4, -1))   
-            self.Y2[n] = to_categorical(cv2.resize(label, (label.shape[1]/8, label.shape[0]/8)), self.n_classes).reshape((label.shape[0]/8, label.shape[1]/8, -1))
-            self.Y3[n] = to_categorical(cv2.resize(label, (label.shape[1]/16, label.shape[0]/16)), self.n_classes).reshape((label.shape[0]/16, label.shape[1]/16, -1))         
-            n += 1
+            self.Y1[n] = to_categorical(cv2.resize(label, (label.shape[1]//4, label.shape[0]//4)), self.n_classes).reshape((label.shape[0]//4, label.shape[1]//4, -1))   
+            self.Y2[n] = to_categorical(cv2.resize(label, (label.shape[1]//8, label.shape[0]//8)), self.n_classes).reshape((label.shape[0]//8, label.shape[1]//8, -1))
+            self.Y3[n] = to_categorical(cv2.resize(label, (label.shape[1]//16, label.shape[0]//16)), self.n_classes).reshape((label.shape[0]//16, label.shape[1]//16, -1))         
         
         return self.X, [self.Y1, self.Y2, self.Y3]
         
@@ -127,11 +125,11 @@ class Visualization(Callback):
             test_image = cv2.resize(cv2.imread(random.choice(self.test_images_list), 1), self.resize_shape)
             
             inputs = [test_image]*self.n_gpu          
-            output = self.model.predict(np.array(inputs), batch_size=self.n_gpu)[0]
+            output, _, _ = self.model.predict(np.array(inputs), batch_size=self.n_gpu)
         
             cv2.imshow('input', test_image)
             cv2.waitKey(1)
-            cv2.imshow('output', _apply_color_map(np.argmax(output, axis=-1), self.labels))
+            cv2.imshow('output', _apply_color_map(np.argmax(output[0], axis=-1), self.labels))
             cv2.waitKey(1)
 
 class PolyDecay:
@@ -216,4 +214,5 @@ def _random_crop(image, label, crop_shape):
         
         return image[y:y+crop_shape[1], x:x+crop_shape[0], :], label[y:y+crop_shape[1], x:x+crop_shape[0]]
     else:
+        print(image.shape)
         raise Exception('Crop shape exceeds image dimensions!')

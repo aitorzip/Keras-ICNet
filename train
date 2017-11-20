@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import argparse
 
@@ -6,15 +6,17 @@ from keras import optimizers
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import TensorBoard
 from keras.callbacks import LearningRateScheduler
+from keras import backend as K
+
+import tensorflow as tf
 
 import model
 from utils import PolyDecay, MapillaryGenerator, Visualization, make_parallel
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--batch_size', type=int, default=1, help='input batch size')
+parser.add_argument('--batch_size', type=int, default=16, help='input batch size')
 parser.add_argument('--image_width', type=int, default=640, help='the input image width')
 parser.add_argument('--image_height', type=int, default=320, help='the input image height')
-parser.add_argument('--random_flip', type=bool, default=True, help='Do random horizontal flip during training')
 parser.add_argument('--epochs', type=int, default=100, help='number of epochs to train for')
 parser.add_argument('--lr', type=float, default=0.01, help='learning rate of the optimizer')
 parser.add_argument('--decay', type=float, default=0.9, help='learning rate decay (per epoch)')
@@ -30,10 +32,16 @@ opt.batch_size *= opt.n_gpu
 
 #### Train ####
 
+# Workaround to avoid tensorflow from crashing the gpu
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+sess = tf.Session(config=config)
+K.set_session(sess)
+
 # Callbacks
-checkpoint = ModelCheckpoint(opt.weights, monitor='val_categorical_accuracy', mode='max', save_best_only=True, save_weights_only=True, verbose=1)
+checkpoint = ModelCheckpoint(opt.weights, monitor='val_conv6_cls_categorical_accuracy', mode='max', save_best_only=True, save_weights_only=True, verbose=1)
 tensorboard = TensorBoard(batch_size=opt.batch_size)
-visualization = Visualization(resize_shape=(opt.image_width, opt.image_height), batch_steps=10, n_gpu=opt.n_gpu)
+visualization = Visualization(resize_shape=(opt.image_width, opt.image_height), batch_steps=100, n_gpu=opt.n_gpu)
 lr_decay = LearningRateScheduler(PolyDecay(opt.lr, opt.decay, opt.epochs).scheduler)
 
 # Generators
@@ -45,10 +53,10 @@ optim = optimizers.SGD(lr=opt.lr, momentum=0.9)
 
 # Model
 net = model.build_bn(opt.image_width, opt.image_height, 66, train=True)
-#net = make_parallel(net, opt.n_gpu)
+net = make_parallel(net, opt.n_gpu)
 
 # Training
 net.compile(optim, 'categorical_crossentropy', loss_weights=[1.0, 0.4, 0.16], metrics=['categorical_accuracy'])
 net.fit_generator(train_generator, len(train_generator), opt.epochs, callbacks=[checkpoint, tensorboard, visualization, lr_decay], 
-                       validation_data=val_generator, validation_steps=len(val_generator), workers=opt.n_cpu, use_multiprocessing=True, shuffle=True)                   
+                       validation_data=val_generator, validation_steps=len(val_generator), workers=opt.n_cpu, use_multiprocessing=False, shuffle=True)                   
 ###############

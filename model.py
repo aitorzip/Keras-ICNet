@@ -15,7 +15,7 @@ def build(width, height, n_classes, weights_path=None, train=False):
     x = Lambda(lambda x: (x - 127.5)/255.0)(inp)
 
     # (1/2)
-    y = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])/2, int(x.shape[2])/2)), name='data_sub2')(x)
+    y = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])//2, int(x.shape[2])//2)), name='data_sub2')(x)
     y = Conv2D(32, 3, strides=2, padding='same', activation='relu', name='conv1_1_3x3_s2')(y)
     y = Conv2D(32, 3, padding='same', activation='relu', name='conv1_2_3x3')(y)
     y = Conv2D(64, 3, padding='same', activation='relu', name='conv1_3_3x3')(y)
@@ -52,7 +52,7 @@ def build(width, height, n_classes, weights_path=None, train=False):
     z = Activation('relu', name='conv3_1/relu')(y)
 
     # (1/4)
-    y_ = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])/2, int(x.shape[2])/2)), name='conv3_1_sub4')(z)
+    y_ = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])//2, int(x.shape[2])//2)), name='conv3_1_sub4')(z)
     y = Conv2D(64, 1, activation='relu', name='conv3_2_1x1_reduce')(y_)
     y = ZeroPadding2D(name='padding5')(y)
     y = Conv2D(64, 3, activation='relu', name='conv3_2_3x3')(y)
@@ -142,11 +142,11 @@ def build(width, height, n_classes, weights_path=None, train=False):
     h, w = y.shape[1:3].as_list()
     pool1 = AveragePooling2D(pool_size=(h,w), strides=(h,w), name='conv5_3_pool1')(y)
     pool1 = Lambda(lambda x: tf.image.resize_bilinear(x, size=(h,w)), name='conv5_3_pool1_interp')(pool1)
-    pool2 = AveragePooling2D(pool_size=(h/2,w/2), strides=(h/2,w/2), name='conv5_3_pool2')(y)
+    pool2 = AveragePooling2D(pool_size=(h/2,w/2), strides=(h//2,w//2), name='conv5_3_pool2')(y)
     pool2 = Lambda(lambda x: tf.image.resize_bilinear(x, size=(h,w)), name='conv5_3_pool2_interp')(pool2)
-    pool3 = AveragePooling2D(pool_size=(h/3,w/3), strides=(h/3,w/3), name='conv5_3_pool3')(y)
+    pool3 = AveragePooling2D(pool_size=(h/3,w/3), strides=(h//3,w//3), name='conv5_3_pool3')(y)
     pool3 = Lambda(lambda x: tf.image.resize_bilinear(x, size=(h,w)), name='conv5_3_pool3_interp')(pool3)
-    pool6 = AveragePooling2D(pool_size=(h/4,w/4), strides=(h/4,w/4), name='conv5_3_pool6')(y)
+    pool6 = AveragePooling2D(pool_size=(h/4,w/4), strides=(h//4,w//4), name='conv5_3_pool6')(y)
     pool6 = Lambda(lambda x: tf.image.resize_bilinear(x, size=(h,w)), name='conv5_3_pool6_interp')(pool6)
 
     y = Add(name='conv5_3_sum')([y, pool1, pool2, pool3, pool6])
@@ -172,11 +172,11 @@ def build(width, height, n_classes, weights_path=None, train=False):
     y = Activation('relu', name='sub12_sum/relu')(y)
     y = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])*2, int(x.shape[2])*2)), name='sub12_sum_interp')(y)
 
-    out = Conv2D(n_classes, 1, activation='linear', name='conv6_cls')(y)
+    out = Conv2D(n_classes, 1, activation='softmax', name='conv6_cls')(y)
 
     if train:
-        aux_1 = Conv2D(n_classes, 1, activation='linear', name='sub4_out')(aux_1)
-        aux_2 = Conv2D(n_classes, 1, activation='linear', name='sub24_out')(aux_2)
+        aux_1 = Conv2D(n_classes, 1, activation='softmax', name='sub4_out')(aux_1)
+        aux_2 = Conv2D(n_classes, 1, activation='softmax', name='sub24_out')(aux_2)
 
         model = Model(inputs=inp, outputs=[out, aux_2, aux_1])
     else:
@@ -191,7 +191,7 @@ def build_bn(width, height, n_classes, weights_path=None, train=False):
     x = Lambda(lambda x: (x - 127.5)/255.0)(inp)
 
     # (1/2)
-    y = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])/2, int(x.shape[2])/2)), name='data_sub2')(x)
+    y = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])//2, int(x.shape[2])//2)), name='data_sub2')(x)
     y = Conv2D(32, 3, strides=2, padding='same', activation='relu', name='conv1_1_3x3_s2')(y)
     y = BatchNormalization(name='conv1_1_3x3_s2_bn')(y)
     y = Conv2D(32, 3, padding='same', activation='relu', name='conv1_2_3x3')(y)
@@ -245,7 +245,7 @@ def build_bn(width, height, n_classes, weights_path=None, train=False):
     z = Activation('relu', name='conv3_1/relu')(y)
 
     # (1/4)
-    y_ = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])/2, int(x.shape[2])/2)), name='conv3_1_sub4')(z)
+    y_ = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])//2, int(x.shape[2])//2)), name='conv3_1_sub4')(z)
     y = Conv2D(64, 1, activation='relu', name='conv3_2_1x1_reduce')(y_)
     y = BatchNormalization(name='conv3_2_1x1_reduce_bn')(y)
     y = ZeroPadding2D(name='padding5')(y)
@@ -373,11 +373,11 @@ def build_bn(width, height, n_classes, weights_path=None, train=False):
     h, w = y.shape[1:3].as_list()
     pool1 = AveragePooling2D(pool_size=(h,w), strides=(h,w), name='conv5_3_pool1')(y)
     pool1 = Lambda(lambda x: tf.image.resize_bilinear(x, size=(h,w)), name='conv5_3_pool1_interp')(pool1)
-    pool2 = AveragePooling2D(pool_size=(h/2,w/2), strides=(h/2,w/2), name='conv5_3_pool2')(y)
+    pool2 = AveragePooling2D(pool_size=(h/2,w/2), strides=(h//2,w//2), name='conv5_3_pool2')(y)
     pool2 = Lambda(lambda x: tf.image.resize_bilinear(x, size=(h,w)), name='conv5_3_pool2_interp')(pool2)
-    pool3 = AveragePooling2D(pool_size=(h/3,w/3), strides=(h/3,w/3), name='conv5_3_pool3')(y)
+    pool3 = AveragePooling2D(pool_size=(h/3,w/3), strides=(h//3,w//3), name='conv5_3_pool3')(y)
     pool3 = Lambda(lambda x: tf.image.resize_bilinear(x, size=(h,w)), name='conv5_3_pool3_interp')(pool3)
-    pool6 = AveragePooling2D(pool_size=(h/4,w/4), strides=(h/4,w/4), name='conv5_3_pool6')(y)
+    pool6 = AveragePooling2D(pool_size=(h/4,w/4), strides=(h//4,w//4), name='conv5_3_pool6')(y)
     pool6 = Lambda(lambda x: tf.image.resize_bilinear(x, size=(h,w)), name='conv5_3_pool6_interp')(pool6)
 
     y = Add(name='conv5_3_sum')([y, pool1, pool2, pool3, pool6])
@@ -411,11 +411,11 @@ def build_bn(width, height, n_classes, weights_path=None, train=False):
     y = Activation('relu', name='sub12_sum/relu')(y)
     y = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])*2, int(x.shape[2])*2)), name='sub12_sum_interp')(y)
     
-    out = Conv2D(n_classes, 1, activation='linear', name='conv6_cls')(y)
+    out = Conv2D(n_classes, 1, activation='softmax', name='conv6_cls')(y)
 
     if train:
-        aux_1 = Conv2D(n_classes, 1, activation='linear', name='sub4_out')(aux_1)
-        aux_2 = Conv2D(n_classes, 1, activation='linear', name='sub24_out')(aux_2)
+        aux_1 = Conv2D(n_classes, 1, activation='softmax', name='sub4_out')(aux_1)
+        aux_2 = Conv2D(n_classes, 1, activation='softmax', name='sub24_out')(aux_2)
         model = Model(inputs=inp, outputs=[out, aux_2, aux_1])
     else:
         model = Model(inputs=inp, outputs=out)
