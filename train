@@ -41,7 +41,7 @@ K.set_session(sess)
 # Callbacks
 checkpoint = ModelCheckpoint(opt.weights, monitor='val_conv6_cls_categorical_accuracy', mode='max', save_best_only=True, save_weights_only=True, verbose=1)
 tensorboard = TensorBoard(batch_size=opt.batch_size)
-visualization = Visualization(resize_shape=(opt.image_width, opt.image_height), batch_steps=100, n_gpu=opt.n_gpu)
+#visualization = Visualization(resize_shape=(opt.image_width, opt.image_height), batch_steps=100, n_gpu=opt.n_gpu)
 lr_decay = LearningRateScheduler(PolyDecay(opt.lr, opt.decay, opt.epochs).scheduler)
 
 # Generators
@@ -57,6 +57,7 @@ net = make_parallel(net, opt.n_gpu)
 
 # Training
 net.compile(optim, 'categorical_crossentropy', loss_weights=[1.0, 0.4, 0.16], metrics=['categorical_accuracy'])
-net.fit_generator(train_generator, len(train_generator), opt.epochs, callbacks=[checkpoint, tensorboard, visualization, lr_decay], 
-                       validation_data=val_generator, validation_steps=len(val_generator), workers=opt.n_cpu, use_multiprocessing=False, shuffle=True)                   
+net.fit_generator(train_generator, len(train_generator), opt.epochs, callbacks=[checkpoint, tensorboard, lr_decay], 
+                       validation_data=val_generator, validation_steps=len(val_generator), workers=opt.n_cpu, use_multiprocessing=False, 
+                       shuffle=True, max_queue_size=10)                   
 ###############

@@ -3,6 +3,7 @@ import glob
 import random
 import json
 import pickle
+import gc
 
 import numpy as np
 import cv2
@@ -51,15 +52,16 @@ class MapillaryGenerator(Sequence):
     def __len__(self):
         return len(self.image_path_list) // self.batch_size
         
-    def __getitem__(self, i):
-        if self.resize_shape:         
-            images = [cv2.resize(cv2.imread(image_path, 1), self.resize_shape) for image_path in self.image_path_list[i*self.batch_size:(i+1)*self.batch_size]]
-            labels = [cv2.resize(cv2.imread(label_path, 0), self.resize_shape) for label_path in self.label_path_list[i*self.batch_size:(i+1)*self.batch_size]]
-        else:
-            images = [cv2.imread(image_path, 1) for image_path in self.image_path_list[i*self.batch_size:(i+1)*self.batch_size]]
-            labels = [cv2.imread(label_path, 0) for label_path in self.label_path_list[i*self.batch_size:(i+1)*self.batch_size]]
-        
-        for n, (image, label) in enumerate(zip(images, labels)):
+    def __getitem__(self, i):        
+        for n, (image_path, label_path) in enumerate(zip(self.image_path_list[i*self.batch_size:(i+1)*self.batch_size], 
+                                                        self.label_path_list[i*self.batch_size:(i+1)*self.batch_size])):
+
+            image = cv2.imread(image_path, 1)
+            label = cv2.imread(label_path, 0)
+            if self.resize_shape:
+                image = cv2.resize(image, self.resize_shape)
+                label = cv2.resize(label, self.resize_shape)
+
             # Do augmentation (only if training)
             if self.mode == 'training':
                 if self.horizontal_flip and random.randint(0,1):
@@ -100,6 +102,9 @@ class MapillaryGenerator(Sequence):
         c = list(zip(self.image_path_list, self.label_path_list))
         random.shuffle(c)
         self.image_path_list, self.label_path_list = zip(*c)
+
+        # Fix memory leak (Keras bug)
+        gc.collect()
                 
 class Visualization(Callback):
     def __init__(self, resize_shape=(640, 320), batch_steps=10, n_gpu=1, **kwargs):
@@ -214,5 +219,4 @@ def _random_crop(image, label, crop_shape):
         
         return image[y:y+crop_shape[1], x:x+crop_shape[0], :], label[y:y+crop_shape[1], x:x+crop_shape[0]]
     else:
-        print(image.shape)
         raise Exception('Crop shape exceeds image dimensions!')
