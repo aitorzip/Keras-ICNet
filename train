@@ -6,12 +6,13 @@ from keras import optimizers
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import TensorBoard
 from keras.callbacks import LearningRateScheduler
+from keras.utils import multi_gpu_model
 from keras import backend as K
 
 import tensorflow as tf
 
 import model
-from utils import PolyDecay, MapillaryGenerator, Visualization, make_parallel
+from utils import PolyDecay, MapillaryGenerator, Visualization
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', type=int, default=16, help='input batch size')
@@ -26,9 +27,6 @@ parser.add_argument('--weights', type=str, default='weights.h5', help='output pa
 opt = parser.parse_args()
 
 print(opt)
-
-# Batch size has to be incremented by number of GPUs (each GPU processes batch_size samples)
-opt.batch_size *= opt.n_gpu 
 
 #### Train ####
 
@@ -53,7 +51,8 @@ optim = optimizers.SGD(lr=opt.lr, momentum=0.9)
 
 # Model
 net = model.build_bn(opt.image_width, opt.image_height, 66, train=True)
-net = make_parallel(net, opt.n_gpu)
+if opt.n_gpu > 1:
+    net = multi_gpu_model(net, opt.n_gpu)
 
 # Training
 net.compile(optim, 'categorical_crossentropy', loss_weights=[1.0, 0.4, 0.16], metrics=['categorical_accuracy'])
