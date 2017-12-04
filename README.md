@@ -2,28 +2,28 @@
 ### [[paper]](https://arxiv.org/abs/1704.08545)
 
 Keras implementation of Real-Time Semantic Segmentation on High-Resolution Images
-
+    
 ## Requisites
 - Python 3
 - Keras 2.0 with Tensorflow backend
-- A dataset, such as Cityscapes or Mapillary ([Mapillary](https://research.mapillary.com/) was used in this case). The dataset should be placed under a datasets directory, following the directory structure:
-
-    .
-    ├── ...
-    ├── mapillary               
-    │   ├── training
-    │   │   ├── images        # Contains the input images
-    │   │   └── instances     # Contains the target labels
-    │   ├── validation
-    │   │   ├── images        # Contains the input images
-    │   │   └── instances     # Contains the target labels
-    │   └── testing
-    │   │   └── images        # Contains the input images
-    └── ...
-
+- A dataset, such as Cityscapes or Mapillary ([Mapillary](https://research.mapillary.com/) was used in this case).
 
 ## Train
 Issue ```./train --help``` for options to start a training session, default arguments should work out-of-the-box.
+
+You need to place the dataset following the next directory convention:
+
+    .
+    ├── mapillary                   
+    |   ├── training
+    |   |   ├── images             # Contains the input images
+    |   |   └── instances          # Contains the target labels
+    |   ├── validation
+    |   |   ├── images
+    |   |   └── instances
+    |   └── testing
+    |   |   └── images
+    
 
 These are the results of training for 300 epochs ```./train --epochs 300```
 
