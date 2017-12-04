@@ -20,7 +20,7 @@ import tensorflow as tf
         
 class MapillaryGenerator(Sequence):
     def __init__(self, folder='datasets/mapillary', mode='training', n_classes=66, batch_size=1, resize_shape=None, 
-                 crop_shape=(640, 320), horizontal_flip=True, vertical_flip=False, brightness=0.1, rotation=5, zoom=0.1):
+                 crop_shape=(640, 320), horizontal_flip=True, vertical_flip=False, brightness=None, rotation=5, zoom=0.1):
 
         self.image_path_list = sorted(glob.glob(os.path.join(folder, mode, 'images/*')))
         self.label_path_list = sorted(glob.glob(os.path.join(folder, mode, 'instances/*')))
@@ -71,6 +71,7 @@ class MapillaryGenerator(Sequence):
                     image = cv2.flip(image, 0)
                     label = cv2.flip(label, 0)
                 if self.brightness:
+                    # TODO: This is super time consuming, make it faster
                     factor = 1.0 + abs(random.gauss(mu=0, sigma=self.brightness))
                     if random.randint(0,1):
                         factor = 1.0/factor

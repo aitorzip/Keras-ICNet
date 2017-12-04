@@ -11,11 +11,12 @@ import numpy as np
 from keras import optimizers
 from keras.callbacks import TensorBoard
 from keras import backend as K
+from keras.utils import multi_gpu_model
 import tensorflow as tf
 import cv2
 
 import model
-from utils import MapillaryGenerator, apply_color_map, make_parallel
+from utils import MapillaryGenerator, apply_color_map
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch_size', type=int, default=16, help='input batch size')
@@ -29,9 +30,6 @@ opt = parser.parse_args()
 
 print(opt)
 
-# Batch size has to be incremented by number of GPUs (each GPU processes batch_size samples)
-opt.batch_size *= opt.n_gpu 
-
 #### Test ####
 
 # Workaround to avoid tensorflow from crashing the gpu
@@ -42,7 +40,8 @@ K.set_session(sess)
 
 # Model
 net = model.build_bn(opt.image_width, opt.image_height, 66, weights_path=opt.weights, train=False)
-net = make_parallel(net, opt.n_gpu)
+if opt.n_gpu > 1:
+    net = multi_gpu_model(net, opt.n_gpu)
 
 # Testing
 x = np.zeros((opt.batch_size, opt.image_height, opt.image_width, 3), dtype='float32')
