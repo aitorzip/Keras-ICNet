@@ -134,7 +134,7 @@ class Visualization(Callback):
         
             cv2.imshow('input', test_image)
             cv2.waitKey(1)
-            cv2.imshow('output', _apply_color_map(np.argmax(output[0], axis=-1), self.labels))
+            cv2.imshow('output', apply_color_map(np.argmax(output[0], axis=-1), self.labels))
             cv2.waitKey(1)
 
 class PolyDecay:
@@ -200,7 +200,7 @@ def make_parallel(model, gpu_count):
     return Model(inputs=model.inputs, outputs=merged)
     
 # Taken from Mappillary Vistas demo.py
-def _apply_color_map(image_array, labels):
+def apply_color_map(image_array, labels):
     color_array = np.zeros((image_array.shape[0], image_array.shape[1], 3), dtype=np.uint8)
 
     for label_id, label in enumerate(labels):

@@ -183,7 +183,7 @@ def build(width, height, n_classes, weights_path=None, train=False):
         model = Model(inputs=inp, outputs=out)
         
     if weights_path is not None:
-        model.load_weights(weights_path)
+        model.load_weights(weights_path, by_name=True)
     return model
 
 def build_bn(width, height, n_classes, weights_path=None, train=False):
@@ -421,5 +421,5 @@ def build_bn(width, height, n_classes, weights_path=None, train=False):
         model = Model(inputs=inp, outputs=out)
         
     if weights_path is not None:
-        model.load_weights(weights_path)
+        model.load_weights(weights_path, by_name=True)
     return model
