@@ -45,4 +45,4 @@ Issue ```./test --help``` for options to start a testing session, default argume
 ![07](https://raw.githubusercontent.com/ai-tor/Keras-ICNet/master/output/7.png)
 
 ## TODO
-* Increase test accuracy (perform training with data augmentation, perform class weighting)
+* Perform class weighting
