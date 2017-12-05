@@ -35,9 +35,6 @@ else:
     print('No checkpoint specified! Set it with the --checkpoint argument option')
     exit()
 
-if opt.n_gpu > 1:
-    net = multi_gpu_model(net, opt.n_gpu)
-
 # Testing
 image_height = net.inputs[0].shape[2]
 image_width = net.inputs[0].shape[1]

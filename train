@@ -41,7 +41,7 @@ K.set_session(sess)
 # Callbacks
 checkpoint = ModelCheckpoint('output/weights.{epoch:03d}-{val_conv6_cls_categorical_accuracy:.3f}.h5', monitor='val_conv6_cls_categorical_accuracy', mode='max')
 tensorboard = TensorBoard(batch_size=opt.batch_size)
-lr_decay = LearningRateScheduler(PolyDecay(opt.lr, opt.decay, opt.epochs).scheduler)
+lr_decay = LearningRateScheduler(PolyDecay(opt.lr, opt.decay, opt.n_epochs).scheduler)
 
 # Generators
 train_generator = MapillaryGenerator(batch_size=opt.batch_size, crop_shape=(opt.image_width, opt.image_height))
@@ -60,7 +60,7 @@ if opt.n_gpu > 1:
 
 # Training
 net.compile(optim, 'categorical_crossentropy', loss_weights=[1.0, 0.4, 0.16], metrics=['categorical_accuracy'])
-net.fit_generator(train_generator, len(train_generator), opt.epochs, callbacks=[checkpoint, tensorboard, lr_decay], 
+net.fit_generator(train_generator, len(train_generator), opt.n_epochs, callbacks=[checkpoint, tensorboard, lr_decay], 
                     validation_data=val_generator, validation_steps=len(val_generator), workers=opt.n_cpu, 
                     use_multiprocessing=False, shuffle=True, max_queue_size=10, initial_epoch=opt.epoch)                   
 ###############
