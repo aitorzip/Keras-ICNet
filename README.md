@@ -1,11 +1,11 @@
 # Keras-ICNet
 ### [[paper]](https://arxiv.org/abs/1704.08545)
 
-Keras implementation of Real-Time Semantic Segmentation on High-Resolution Images
+Keras implementation of Real-Time Semantic Segmentation on High-Resolution Images. **Training in progress!**
     
 ## Requisites
 - Python 3
-- Keras 2.0 with Tensorflow backend
+- Keras 2.1.1 with Tensorflow backend
 - A dataset, such as Cityscapes or Mapillary ([Mapillary](https://research.mapillary.com/) was used in this case).
 
 ## Train
