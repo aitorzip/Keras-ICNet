@@ -23,7 +23,6 @@ parser.add_argument('--lr', type=float, default=0.01, help='learning rate of the
 parser.add_argument('--decay', type=float, default=0.9, help='learning rate decay (per epoch)')
 parser.add_argument('--n_gpu', type=int, default=1, help='Number of GPUs to use')
 parser.add_argument('--n_cpu', type=int, default=8, help='Number of CPU threads to use during data generation')
-parser.add_argument('--weights', type=str, default='weights.h5', help='output path for the weights file')
 opt = parser.parse_args()
 
 print(opt)
@@ -37,7 +36,7 @@ sess = tf.Session(config=config)
 K.set_session(sess)
 
 # Callbacks
-checkpoint = ModelCheckpoint(opt.weights, monitor='val_conv6_cls_categorical_accuracy', mode='max', save_best_only=True, save_weights_only=True, verbose=1)
+checkpoint = ModelCheckpoint('output/weights.{epoch:03d}-{val_conv6_cls_categorical_accuracy:.2f}.hdf5', monitor='val_conv6_cls_categorical_accuracy', mode='max', verbose=1)
 tensorboard = TensorBoard(batch_size=opt.batch_size)
 lr_decay = LearningRateScheduler(PolyDecay(opt.lr, opt.decay, opt.epochs).scheduler)
 

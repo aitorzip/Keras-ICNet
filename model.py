@@ -11,12 +11,6 @@ from keras.models import Model
 import keras.backend as K
 import tensorflow as tf
 
-def depth_softmax(matrix):
-    sigmoid = lambda x: 1 / (1 + K.exp(-x))
-    sigmoided_matrix = sigmoid(matrix)
-    softmax_matrix = sigmoided_matrix / K.sum(sigmoided_matrix, axis=0)
-    return softmax_matrix
-
 def build(width, height, n_classes, weights_path=None, train=False):
     inp = Input(shape=(height, width, 3))
     x = Lambda(lambda x: (x - 127.5)/255.0)(inp)
@@ -179,11 +173,11 @@ def build(width, height, n_classes, weights_path=None, train=False):
     y = Activation('relu', name='sub12_sum/relu')(y)
     y = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])*2, int(x.shape[2])*2)), name='sub12_sum_interp')(y)
 
-    out = Lambda(depth_softmax, name='out')(Conv2D(n_classes, 1, name='conv6_cls')(y))
+    out = Conv2D(n_classes, 1, activation='softmax', name='conv6_cls')(y)
 
     if train:
-        aux_1 = Lambda(depth_softmax, name='aux_1')(Conv2D(n_classes, 1, name='sub4_out')(aux_1))
-        aux_2 = Lambda(depth_softmax, name='aux_2')(Conv2D(n_classes, 1, name='sub24_out')(aux_2))
+        aux_1 = Conv2D(n_classes, 1, activation='softmax', name='sub4_out')(aux_1)
+        aux_2 = Conv2D(n_classes, 1, activation='softmax', name='sub24_out')(aux_2)
 
         model = Model(inputs=inp, outputs=[out, aux_2, aux_1])
     else:
@@ -418,11 +412,11 @@ def build_bn(width, height, n_classes, weights_path=None, train=False):
     y = Activation('relu', name='sub12_sum/relu')(y)
     y = Lambda(lambda x: tf.image.resize_bilinear(x, size=(int(x.shape[1])*2, int(x.shape[2])*2)), name='sub12_sum_interp')(y)
     
-    out = Lambda(depth_softmax, name='out')(Conv2D(n_classes, 1, name='conv6_cls')(y))
+    out = Conv2D(n_classes, 1, activation='softmax', name='conv6_cls')(y)
 
     if train:
-        aux_1 = Lambda(depth_softmax, name='aux_1')(Conv2D(n_classes, 1, name='sub4_out')(aux_1))
-        aux_2 = Lambda(depth_softmax, name='aux_2')(Conv2D(n_classes, 1, name='sub24_out')(aux_2))
+        aux_1 = Conv2D(n_classes, 1, activation='softmax', name='sub4_out')(aux_1)
+        aux_2 = Conv2D(n_classes, 1, activation='softmax', name='sub24_out')(aux_2)
         model = Model(inputs=inp, outputs=[out, aux_2, aux_1])
     else:
         model = Model(inputs=inp, outputs=out)
